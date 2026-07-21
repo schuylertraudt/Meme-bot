@@ -1,0 +1,16 @@
+[Unit]
+Description=Meme Bot Discord Bot
+After=network.target
+
+[Service]
+Type=simple
+# Replace 'ubuntu' with the actual user this bot should run as
+User=ubuntu
+WorkingDirectory=/home/ubuntu/Meme-bot
+ExecStart=/usr/bin/node src/index.js
+Restart=on-failure
+RestartSec=5
+EnvironmentFile=/home/ubuntu/Meme-bot/.env
+
+[Install]
+WantedBy=multi-user.target
