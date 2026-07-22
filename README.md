@@ -60,21 +60,19 @@ You should see `Logged in as YourBot#1234` in the console. Type your trigger wor
 
 ### Run it permanently with systemd (recommended)
 
-1. Edit `deploy/meme-bot.service` and replace `ubuntu` with your actual Linux username / home path if different.
-2. Install and start the service:
+`deploy/install.sh` automates this: it installs npm dependencies, generates a systemd unit for the current user/path, and starts + enables the service.
 
 ```bash
-sudo cp deploy/meme-bot.service /etc/systemd/system/meme-bot.service
-sudo systemctl daemon-reload
-sudo systemctl enable meme-bot
-sudo systemctl start meme-bot
+sudo bash deploy/install.sh
 ```
 
-3. Check status / logs:
+Check status / logs:
 
 ```bash
 sudo systemctl status meme-bot
 journalctl -u meme-bot -f
 ```
 
-The bot will now auto-start on boot and restart if it crashes. To pick up new trigger words, just edit `config/triggers.json` on the server — no restart required. To pick up code changes, `git pull` then `sudo systemctl restart meme-bot`.
+The bot will now auto-start on boot and restart if it crashes. To pick up new trigger words, just edit `config/triggers.json` on the server — no restart required. To pick up code changes: `git pull && sudo systemctl restart meme-bot`.
+
+A static example unit is also kept at `deploy/meme-bot.service` for reference if you'd rather set it up by hand.
