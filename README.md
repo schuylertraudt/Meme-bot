@@ -31,6 +31,30 @@ Edit `config/triggers.json`:
 - Keys are matched case-insensitively as whole words (e.g. `dsa` matches "dsa", "DSA", but not "dsaster").
 - Any direct image/gif URL works (Giphy, Tenor direct link, Discord CDN link, etc.) — Discord will auto-embed it.
 
+## 2b. Cross-server relay command (`!say`)
+
+Lets you type `!say <target> <message>` in one server and have the bot post that exact message into a channel in a different server. Restricted to specific Discord user IDs so randoms can't use your bot to broadcast into servers you moderate.
+
+**Setup:**
+
+1. The bot must be a member of both servers — invite it to server B the same way you invited it to server A (OAuth2 → URL Generator link, pick server B this time).
+2. Get your own Discord user ID: in Discord, **User Settings → Advanced → Developer Mode** (toggle on), then right-click your own name/avatar → **Copy User ID**.
+3. Get the target channel ID in server B: right-click the channel → **Copy Channel ID**.
+4. In `.env`, set `ALLOWED_USER_IDS` to your user ID (comma-separate multiple IDs if more than one person should be allowed).
+5. In `config/relay-targets.json`, give that channel ID a friendly name:
+   ```json
+   { "serverb": "123456789012345678" }
+   ```
+   (You can add as many named targets as you want — one per server/channel.)
+
+**Usage:** in any server the bot can see you in, type:
+```
+!say serverb hey this is a test
+```
+and it posts "hey this is a test" into the channel named `serverb`. You can also skip the config file and pass a raw channel ID directly: `!say 123456789012345678 hello`. The bot reacts ✅ on success, or replies with an error if something's wrong (unauthorized user, unknown target, missing permissions in the target channel, etc).
+
+Both `.env` and `config/relay-targets.json` changes are picked up live — `.env` needs a restart (`sudo systemctl restart meme-bot`), but `relay-targets.json` hot-reloads like `triggers.json`.
+
 ## 3. Deploy on your Ubuntu server
 
 ### Install Node.js (if not already installed)

@@ -34,6 +34,67 @@ fs.watchFile(TRIGGERS_PATH, { interval: 2000 }, () => {
   }
 });
 
+const RELAY_TARGETS_PATH = path.join(__dirname, '..', 'config', 'relay-targets.json');
+
+function loadRelayTargets() {
+  try {
+    const raw = fs.readFileSync(RELAY_TARGETS_PATH, 'utf8');
+    return JSON.parse(raw);
+  } catch (err) {
+    return {};
+  }
+}
+
+let relayTargets = loadRelayTargets();
+
+fs.watchFile(RELAY_TARGETS_PATH, { interval: 2000 }, () => {
+  relayTargets = loadRelayTargets();
+  console.log('Reloaded relay-targets.json');
+});
+
+const ALLOWED_USER_IDS = (process.env.ALLOWED_USER_IDS || '')
+  .split(',')
+  .map((id) => id.trim())
+  .filter(Boolean);
+
+const SAY_PREFIX = '!say';
+
+async function handleSayCommand(message, client) {
+  if (!ALLOWED_USER_IDS.includes(message.author.id)) {
+    await message.reply("You don't have permission to use this command.").catch(() => {});
+    return;
+  }
+
+  const rest = message.content.slice(SAY_PREFIX.length).trim();
+  const spaceIdx = rest.indexOf(' ');
+  if (!rest || spaceIdx === -1) {
+    await message.reply('Usage: `!say <target> <message>` (target = name from relay-targets.json or a raw channel ID)').catch(() => {});
+    return;
+  }
+
+  const targetToken = rest.slice(0, spaceIdx);
+  const text = rest.slice(spaceIdx + 1).trim();
+  const channelId = relayTargets[targetToken] || (/^\d+$/.test(targetToken) ? targetToken : null);
+
+  if (!channelId) {
+    await message.reply(`Unknown target "${targetToken}". Add it to config/relay-targets.json or pass a raw channel ID.`).catch(() => {});
+    return;
+  }
+
+  try {
+    const targetChannel = await client.channels.fetch(channelId);
+    if (!targetChannel || !targetChannel.isTextBased()) {
+      await message.reply('That target is not a valid text channel, or the bot is not in that server.').catch(() => {});
+      return;
+    }
+    await targetChannel.send(text);
+    await message.react('✅').catch(() => {});
+  } catch (err) {
+    console.error('Failed to relay message:', err.message);
+    await message.reply(`Failed to send: ${err.message}`).catch(() => {});
+  }
+}
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -49,6 +110,11 @@ client.once('ready', () => {
 
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
+
+  if (message.content.startsWith(SAY_PREFIX)) {
+    await handleSayCommand(message, client);
+    return;
+  }
 
   const words = message.content.toLowerCase().match(/[a-z0-9']+/g);
   if (!words) return;
