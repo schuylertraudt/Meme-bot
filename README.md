@@ -40,7 +40,11 @@ Lets you type `!say <target> <message>` in one server and have the bot post that
 1. The bot must be a member of both servers — invite it to server B the same way you invited it to server A (OAuth2 → URL Generator link, pick server B this time).
 2. Get your own Discord user ID: in Discord, **User Settings → Advanced → Developer Mode** (toggle on), then right-click your own name/avatar → **Copy User ID**.
 3. Get the target channel ID in server B: right-click the channel → **Copy Channel ID**.
-4. In `.env`, set `ALLOWED_USER_IDS` to your user ID (comma-separate multiple IDs if more than one person should be allowed).
+4. Add your user ID to `config/allowed-users.json`:
+   ```json
+   ["123456789012345678"]
+   ```
+   (add more IDs to the array if more than one person should be allowed).
 5. In `config/relay-targets.json`, give that channel ID a friendly name:
    ```json
    { "serverb": "123456789012345678" }
@@ -53,7 +57,7 @@ Lets you type `!say <target> <message>` in one server and have the bot post that
 ```
 and it posts "hey this is a test" into the channel named `serverb`. You can also skip the config file and pass a raw channel ID directly: `!say 123456789012345678 hello`. The bot reacts ✅ on success, or replies with an error if something's wrong (unauthorized user, unknown target, missing permissions in the target channel, etc).
 
-Both `.env` and `config/relay-targets.json` changes are picked up live — `.env` needs a restart (`sudo systemctl restart meme-bot`), but `relay-targets.json` hot-reloads like `triggers.json`.
+`config/allowed-users.json` and `config/relay-targets.json` are both hot-reloaded — no restart needed after editing either.
 
 ## 3. Deploy on your Ubuntu server
 

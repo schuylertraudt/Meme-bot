@@ -52,15 +52,29 @@ fs.watchFile(RELAY_TARGETS_PATH, { interval: 2000 }, () => {
   console.log('Reloaded relay-targets.json');
 });
 
-const ALLOWED_USER_IDS = (process.env.ALLOWED_USER_IDS || '')
-  .split(',')
-  .map((id) => id.trim())
-  .filter(Boolean);
+const ALLOWED_USERS_PATH = path.join(__dirname, '..', 'config', 'allowed-users.json');
+
+function loadAllowedUsers() {
+  try {
+    const raw = fs.readFileSync(ALLOWED_USERS_PATH, 'utf8');
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.map(String) : [];
+  } catch (err) {
+    return [];
+  }
+}
+
+let allowedUsers = loadAllowedUsers();
+
+fs.watchFile(ALLOWED_USERS_PATH, { interval: 2000 }, () => {
+  allowedUsers = loadAllowedUsers();
+  console.log('Reloaded allowed-users.json');
+});
 
 const SAY_PREFIX = '!say';
 
 async function handleSayCommand(message, client) {
-  if (!ALLOWED_USER_IDS.includes(message.author.id)) {
+  if (!allowedUsers.includes(message.author.id)) {
     await message.reply("You don't have permission to use this command.").catch(() => {});
     return;
   }
